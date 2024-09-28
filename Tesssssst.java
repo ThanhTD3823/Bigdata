@@ -68,3 +68,5 @@ public class WordCount {
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }
+hdfs dfs -ls /user/your_input_path
+hdfs dfs -rm -r /user/your_output_path
