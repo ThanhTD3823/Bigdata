@@ -16,3 +16,7 @@ public class ElectricityMapper extends Mapper<LongWritable, Text, Text, IntWrita
         context.write(new Text(year), new IntWritable(avgElectricity));
     }
 }
+// 
+// hdfs dfs -mkdir -p /user/hadoop/input
+// hdfs dfs -put electricity.txt /user/hadoop/input/
+//
