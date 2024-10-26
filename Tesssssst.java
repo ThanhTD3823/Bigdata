@@ -1,3 +1,4 @@
+ElectricityMapper.java, ElectricityReducer.java và ElectricityDriver.java.
 hdfs dfs -mkdir /user/cloudera/bai_toan_dien
 hdfs dfs -put sample.txt /user/cloudera/bai_toan_dien
 
