@@ -70,3 +70,4 @@ public class WordCount {
 }
 hdfs dfs -ls /user/your_input_path
 hdfs dfs -rm -r /user/your_output_path
+https://drive.google.com/file/d/1tvQIICg-Eql5Mqt51xJNlEiDp3Pm7XG1/view
