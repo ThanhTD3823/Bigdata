@@ -1,73 +1,93 @@
+hdfs dfs -mkdir /user/cloudera/bai_toan_dien
+hdfs dfs -put sample.txt /user/cloudera/bai_toan_dien
+
 import java.io.IOException;
-import java.util.StringTokenizer;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+public class ElectricityMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+    @Override
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        // Tách dòng dữ liệu thành các phần
+        String[] fields = value.toString().split("\\s+");
+        
+        // Lấy năm và mức tiêu thụ trung bình
+        String year = fields[0];
+        int avg = Integer.parseInt(fields[fields.length - 1]);
+        
+        // Đưa ra kết quả
+        context.write(new Text(year), new IntWritable(avg));
+    }
+}
+
+
+import java.io.IOException;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class ElectricityReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+    @Override
+    protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        for (IntWritable value : values) {
+            // Chỉ ghi các năm có mức tiêu thụ điện trung bình lớn hơn 30
+            if (value.get() > 30) {
+                context.write(key, value);
+            }
+        }
+    }
+}
+
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-public class WordCount {
-
-    // Mapper Class
-    public static class TokenizerMapper extends Mapper<Object, Text, Text, IntWritable> {
-        private final static IntWritable one = new IntWritable(1);
-        private Text word = new Text();
-
-        public void map(Object key, Text value, Context context) throws IOException, InterruptedException {
-            StringTokenizer itr = new StringTokenizer(value.toString());
-            while (itr.hasMoreTokens()) {
-                word.set(itr.nextToken());
-                context.write(word, one);
-            }
-        }
-    }
-
-    // Reducer Class
-    public static class IntSumReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
-        private IntWritable result = new IntWritable();
-
-        public void reduce(Text key, Iterable<IntWritable> values, Context context)
-                throws IOException, InterruptedException {
-            int sum = 0;
-            for (IntWritable val : values) {
-                sum += val.get();
-            }
-            result.set(sum);
-            context.write(key, result);
-        }
-    }
-
-    // Main method
+public class ElectricityDriver {
     public static void main(String[] args) throws Exception {
-        // Check for sufficient arguments
-        if (args.length < 2) {
-            System.err.println("Usage: WordCount <input path> <output path>");
+        // Kiểm tra tham số đầu vào
+        if (args.length != 2) {
+            System.err.println("Usage: ElectricityDriver <input path> <output path>");
             System.exit(-1);
         }
-
-        // Configuration and Job setup
+        
+        // Cấu hình Job
         Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf, "word count");
-        job.setJarByClass(WordCount.class);
-        job.setMapperClass(TokenizerMapper.class);
-        job.setCombinerClass(IntSumReducer.class);
-        job.setReducerClass(IntSumReducer.class);
+        Job job = Job.getInstance(conf, "Electricity Consumption");
+        job.setJarByClass(ElectricityDriver.class);
+        job.setMapperClass(ElectricityMapper.class);
+        job.setReducerClass(ElectricityReducer.class);
+        
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(IntWritable.class);
-
-        // Set input and output paths
+        
+        // Thiết lập đường dẫn input và output
         FileInputFormat.addInputPath(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
-
-        // Run the job and wait for completion
+        
+        // Chạy job
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 }
-hdfs dfs -ls /user/your_input_path
-hdfs dfs -rm -r /user/your_output_path
-https://drive.google.com/file/d/1tvQIICg-Eql5Mqt51xJNlEiDp3Pm7XG1/view
+
+
+
+javac -classpath `hadoop classpath` -d . ElectricityMapper.java ElectricityReducer.java ElectricityDriver.java
+
+
+
+    jar -cvf ElectricityConsumption.jar *.class
+
+
+
+    hadoop jar ElectricityConsumption.jar ElectricityDriver /user/cloudera/bai_toan_dien/sample.txt /user/cloudera/bai_toan_dien/output
+
+
+
+    hdfs dfs -cat /user/cloudera/bai_toan_dien/output/part-r-00000
