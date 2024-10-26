@@ -1,4 +1,5 @@
 Để hướng dẫn bạn từ đầu trong việc thiết lập dự án Java MapReduce và xây dựng nó trên Cloudera, mình sẽ đưa ra các bước tuần tự như sau:
+hdfs dfs -put /home/cloudera/bai_toan_dien/sample.txt /user/cloudera/bai_toan_dien/
 
 ### Mục tiêu:
 - Tạo một chương trình Java MapReduce để đọc dữ liệu từ file `sample.txt`.
